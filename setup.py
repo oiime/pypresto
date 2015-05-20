@@ -11,6 +11,7 @@ setup(
     author="Itamar Maltz",
     author_email="ism@qdatum.io",
     packages=find_packages(),
+    install_requires=['future'],
     platforms=["any"],
     license='MIT',
     keywords="cassandra hive presto",

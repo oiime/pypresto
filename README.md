@@ -20,13 +20,13 @@ or, execute from the source directory
 python setup.py install
 ```
 
-### Client() options
+### Client() arguments
 ```
   hostnames     A list of optional hostnames to connect to, currently a random hostname is used from the list per query
   port          Port to connect to (default: 8080)
   user          User name (default: 'nobody')
 ```
-### client.connect options
+### client.connect() arguments
 ```
   max_workers   Maximum number of workrs to spawn when we're running queries asynchronously (default:6)
   catalog       Catalog name (default: 'default')
@@ -43,10 +43,10 @@ Simple querying:
 from pypresto import Client
 
 client = Client(['127.0.0.1'])
-session = client.connect(catalog='cassandra', schema="myschema")
-q = session.query('SELECT * FROM mytable')
-for row in q.iter_results():
-    print('%r' % row)
+with client.connect(catalog='cassandra', schema="myschema") as session:
+    q = session.query('SELECT * FROM mytable')
+    for row in q.iter_results():
+        print('%r' % row)
 ```
 
 Using futures:
@@ -54,13 +54,14 @@ Using futures:
 ```python
 from pypresto import Client
 
-futures = []
-for i in range(10):
-    futures.append(session.query_async('SELECT * FROM mytable where my_int=%d', [i]))
+with client.connect(catalog='cassandra', schema="myschema") as session:
+    futures = []
+    for i in range(10):
+        futures.append(session.query_async('SELECT * FROM mytable where my_int=%d', [i]))
 
-for future in futures:
-    for row in future.result().iter_results():
-      print('%r' % row)
+    for future in futures:
+        for row in future.result().iter_results():
+          print('%r' % row)
 ```
 
 ### License

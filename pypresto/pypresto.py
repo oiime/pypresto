@@ -1,8 +1,11 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import httplib2
 import random
 import json
 import logging
-import Queue
+import queue
 
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor
@@ -21,7 +24,7 @@ class PyPrestoError(Exception):
 
 class Query(object):
     def __init__(self, session, q, args=None):
-        self.result = Queue.Queue()
+        self.result = queue.Queue()
         self.columns = None
         self.session = session
         self.query_string = self.__process_statement(q, args)
@@ -90,8 +93,8 @@ class Query(object):
                     self.result.put_nowait(row)
 
         if self.state == 'FAILED':
-            logger.warn('Query failed: %s, %r', self.query_string, rsp['error'])
             self.done.set()
+            raise PyPrestoError('Query failed: %s, %r' % (self.query_string, rsp['error']))
         elif self.state == 'FINISHED':
             logger.info('Query finished: %s', self.query_string)
             self.done.set()
@@ -128,11 +131,11 @@ class Query(object):
                     self.current_step += self.session.wait_step
                 sleep(self.current_step)
 
-            elif not self.result.empty():
+            if not self.result.empty():
                 try:
                     while True:
                         yield self.result.get_nowait()
-                except Queue.Empty:
+                except queue.Empty:
                     pass
 
 
@@ -155,6 +158,9 @@ class Session(object):
         return self
 
     def __exit__(self, type, value, traceback):
+        self.close()
+
+    def close(self):
         self.executor.shutdown()
 
     def query_async(self, q, args=None):
